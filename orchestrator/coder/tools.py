@@ -1,2 +1,2 @@
-def tool(func):
-	
+import path
+
