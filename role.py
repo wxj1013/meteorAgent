@@ -49,5 +49,5 @@ def assign_to(*roles: Role):
         )
         for role in roles:
             role.add_tool(tool)
-        return func  # 原函数不变，仍可独立调用
+        return func
     return decorator
