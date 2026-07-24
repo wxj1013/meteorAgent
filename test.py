@@ -9,6 +9,10 @@ gpu_name = torch.cuda.get_device_name()
 print(f"GPU Name: {gpu_name}")
 '''
 
-from role import Role
+workdir = "E:/MeteorAgentWs"
 
-print(Role)
+from role import Role
+from coder import Coder
+
+
+print(Coder)
