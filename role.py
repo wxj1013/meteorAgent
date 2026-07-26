@@ -1,11 +1,10 @@
 from typing import List, Dict, Any, Optional, Callable
-from tools import Tool
 import inspect
 
 # 角色，定义每个角色的工具和skill
 class Role:
     _name: str = ""
-    _tools: List[Tool] = []
+    _tools = []
     # _skills: List[Skill] = []
 
     # 把工具输出为prompt
