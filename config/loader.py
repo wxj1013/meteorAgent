@@ -4,37 +4,29 @@ from typing import Any, Dict
 
 class Config:
     """
-    统一配置加载器（单例模式）
-    所有模块都从这里读配置
+        全局配置类，启动时加载。
+        读取所有.yaml类
+        使用方法(例如env.yaml)：
+        from config import Config
+        env = Config.get("env")
     """
-    _instance = None
     _data: Dict[str, Any] = {}
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._load_all()
-        return cls._instance
-
-    def _load_all(self):
+    @classmethod
+    def load(cls):
         base = Path(__file__).parent
         for yml in base.glob("*.yaml"):
             with open(yml, "r", encoding="utf-8") as f:
-                self._data[yml.stem] = yaml.safe_load(f)
+                cls._data[yml.stem] = yaml.safe_load(f)
 
-    # ---------- 通用接口 ----------
-    def get(self, key: str, default=None):
-        return self._data.get(key, default)
+    @classmethod
+    def get(cls, key: str):
+        return cls._data.get(key)
 
-    def env(self):
-        return self._data.get("env", {})
+    @classmethod
+    def set(cls, key: str, value):
+        cls._data[key] = value
 
-    def orchestrator(self):
-        return self._data.get("orchestrator", {})
 
-    def agent(self):
-        return self._data.get("agent", {})
-
-    # ---------- 快捷访问 ----------
-    def __getitem__(self, item):
-        return self._data[item]
+# 导入即加载
+Config.load()

@@ -1,0 +1,6 @@
+# 通用工具的配置文件
+
+# 文件操作
+file_operation:
+  read_file:
+    size_limit: 5MB # 直接读取文件的大小限制，可以写B,KB,MB,GB
