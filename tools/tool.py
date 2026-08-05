@@ -1,4 +1,5 @@
 from typing import Callable
+import inspect
 
 """
     agent工具
@@ -20,3 +21,24 @@ class Tool:
             f"输出结果：{self.returns}\n"
             f"注释：{self.doc}\n"
         )
+
+
+# 注册工具权限，注册后的role可以通过call_tool来使用。
+def assign_to(*role_classes: type):
+    def decorator(func: Callable) -> Callable:
+        sig = inspect.signature(func)
+        # 返回类型必须为str
+        return_annotation = sig.return_annotation
+        if return_annotation is not str:
+            raise TypeError(f"函数 {func.__name__} 的返回类型注解必须是 str")
+        # 注册工具
+        tool = Tool(
+            func=func,
+            parameters=list(sig.parameters.values()), 
+            returns=sig.return_annotation,
+            doc=func.__doc__
+        )
+        for role_cls in role_classes:
+            role_cls._tools.append(tool)
+        return func
+    return decorator

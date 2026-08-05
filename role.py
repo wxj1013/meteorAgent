@@ -21,7 +21,7 @@ class Role:
 
     # 调用一个工具
     @classmethod
-    def call_tool(cls, tool_name: str, **kwargs) -> Any:
+    def call_tool(cls, tool_name: str, **kwargs) -> str:
         for tool in cls._tools:
             if tool.name == tool_name:
                 try:
@@ -29,19 +29,4 @@ class Role:
                 except Exception as e:
                     return f"调用工具错误：{e}"
 
-        raise ValueError(f"角色「{cls._name}」没有名为「{tool_name}」的工具")
-
-# 注册工具权限，注册后可以通过call_tool来使用。
-def assign_to(*role_classes: type):
-    def decorator(func: Callable) -> Callable:
-        sig = inspect.signature(func)
-        tool = Tool(
-            func=func,
-            parameters=list(sig.parameters.values()), 
-            returns=sig.return_annotation,
-            description=func.__doc__
-        )
-        for role_cls in role_classes:
-            role_cls._tools.append(tool)
-        return func
-    return decorator
+        return f"角色「{cls._name}」没有名为「{tool_name}」的工具"

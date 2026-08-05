@@ -9,11 +9,11 @@ gpu_name = torch.cuda.get_device_name()
 print(f"GPU Name: {gpu_name}")
 '''
 
-workdir = "E:/MeteorAgentWs"
 
 from role import Role
 from coder import Coder
-from utils import *
+from config import Config
+import tools
 
 
-print(parse_size("5GB"))
+print(Coder.call_tool("run_python", script_path="test.py"))
