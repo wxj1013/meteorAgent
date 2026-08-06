@@ -5,3 +5,5 @@ from role import Role
 """
 class Coder(Role):
 	_name: str = "coder"
+
+Coder.init_llm_model()

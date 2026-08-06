@@ -1,11 +1,13 @@
 from typing import List, Dict, Any, Optional, Callable
 import inspect
+from llm import BaseLLM, DeepSeekLLM
 
 # 角色，定义每个角色的工具和skill
 class Role:
     _name: str = ""
     _tools = []
     # _skills: List[Skill] = []
+    _llm_model: BaseLLM = None
 
     # 把工具输出为prompt
     @classmethod
@@ -30,3 +32,11 @@ class Role:
                     return f"调用工具错误：{e}"
 
         return f"角色「{cls._name}」没有名为「{tool_name}」的工具"
+
+    # 初始化llm模型
+    @classmethod
+    def init_llm_model(cls, api_key: str, model: str, reasoning_effort: str, system_prompt: str):
+        if "deepseek" in model:
+            cls._llm_model = DeepSeekLLM(api_key, model, reasoning_effort, system_prompt)
+        else:
+            raise Exception(f"不支持当前模型:{model}")

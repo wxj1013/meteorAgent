@@ -10,22 +10,30 @@ class BaseLLM:
 
 # deepseek
 class DeepSeekLLM(BaseLLM):
-    def __init__(self, api_key: str, model: str, stream: bool):
+    def __init__(self, api_key: str, model: str, reasoning_effort: str, system_prompt: str):
         self.api_key = api_key
         self.model = model
-        self.stream = stream
         self.reasoning_effort = reasoning_effort
+        self.system_prompt = system_prompt
         self.client = OpenAI(
             api_key=api_key,
             base_url="https://api.deepseek.com")
 
-    def chat(self, messages: List[Dict[str, str]]) -> str:
-        response = client.chat.completions.create(
+    # agent角色与用户
+    def chat(self, message: str) -> str:
+        # 组装message
+        messages = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": message},
+        ]
+
+        # 发送请求
+        response = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
-            stream=self.stream,
-            reasoning_effort="high",
+            stream=False, 
+            reasoning_effort=self.reasoning_effort,
             extra_body={"thinking": {"type": "enabled"}}
         )
-        return response
+        return response.choices[0].message.content
 

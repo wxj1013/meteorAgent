@@ -14,6 +14,8 @@ from role import Role
 from coder import Coder
 from config import Config
 import tools
+from llm import DeepSeekLLM
 
+dsllm = DeepSeekLLM("sk-8f026b1a113b4c428f0b1e58eb1e7eee", "deepseek-v4-pro", "high", "你是一个测试llm功能返回的机器人，可以随便回复")
 
-print(Coder.call_tool("run_python", script_path="test.py"))
+# print(dsllm.chat("复活吧我的爱人"))
