@@ -16,6 +16,6 @@ from config import Config
 import tools
 from llm import DeepSeekLLM
 
-dsllm = DeepSeekLLM("sk-8f026b1a113b4c428f0b1e58eb1e7eee", "deepseek-v4-pro", "high", "你是一个测试llm功能返回的机器人，可以随便回复")
+# print(Coder._llm_model.system_prompt)
 
-# print(dsllm.chat("复活吧我的爱人"))
+print(Coder.pack_tools())

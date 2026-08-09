@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional, Callable
 import inspect
 from llm import BaseLLM, DeepSeekLLM
+import utils
 
 # 角色，定义每个角色的工具和skill
 class Role:
@@ -9,17 +10,32 @@ class Role:
     # _skills: List[Skill] = []
     _llm_model: BaseLLM = None
 
-    # 把工具输出为prompt
+    # 打包工具给大模型api
     @classmethod
-    def tools_to_prompt(cls) -> str:
-        if not cls._tools:
-            return f"角色「{cls._name}」没有可用工具。"
-        
-        lines = [f"角色「{cls._name}」可使用的工具有："]
-        for idx, tool in enumerate(_tools, start=1):
-            lines.append(f"\n--- 工具 {idx} ---")
-            lines.append(tool.to_natural_language())
-        return "\n".join(lines)
+    def pack_tools(cls) -> list:
+        """生成 API 调用所需的 tools 参数（精简版）"""
+        return [
+            {
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.doc or f"{tool.name} 工具",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            p.name: {
+                                "type": utils.py_type_to_json(p.annotation),
+                                "description": f"{p.name} 参数"
+                            } for p in tool.parameters
+                        },
+                        "required": [
+                            p.name for p in tool.parameters 
+                            if p.default == inspect.Parameter.empty
+                        ]
+                    }
+                }
+            } for tool in cls._tools
+        ]
 
     # 调用一个工具
     @classmethod
@@ -33,10 +49,18 @@ class Role:
 
         return f"角色「{cls._name}」没有名为「{tool_name}」的工具"
 
-    # 初始化llm模型
+    # 初始化llm模型，role继承时一定要调用。
     @classmethod
     def init_llm_model(cls, api_key: str, model: str, reasoning_effort: str, system_prompt: str):
         if "deepseek" in model:
             cls._llm_model = DeepSeekLLM(api_key, model, reasoning_effort, system_prompt)
         else:
             raise Exception(f"不支持当前模型:{model}")
+
+    # 调用模型。在这里替换tools和skills
+    @classmethod
+    def chat(cls, message: str):
+        system_prompt = cls._llm_model.system_prompt.format(tools = cls.tools_to_prompt())
+        print(system_prompt)
+
+        # return cls._llm_model.chat(message, system_prompt)

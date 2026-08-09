@@ -19,21 +19,23 @@ class DeepSeekLLM(BaseLLM):
             api_key=api_key,
             base_url="https://api.deepseek.com")
 
+        self.base_messages = [{"role": "system", "content": system_prompt}]
+
     # agent角色与用户
-    def chat(self, message: str) -> str:
-        # 组装message
-        messages = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": message},
-        ]
+    def chat(self, message: str, hist: list = None, tools: list = None) -> str:
+        messages = self.base_messages.copy()
+
+        messages.extend(hist)
 
         # 发送请求
         response = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
-            stream=False, 
+            tools=tools if tools else None,
+            tool_choice="auto" if tools else None,
+            stream=False,
             reasoning_effort=self.reasoning_effort,
             extra_body={"thinking": {"type": "enabled"}}
         )
-        return response.choices[0].message.content
+        return response.choices[0].message
 
