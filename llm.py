@@ -21,7 +21,7 @@ class DeepSeekLLM(BaseLLM):
 
         self.base_messages = [{"role": "system", "content": system_prompt}]
 
-    # agent角色与用户
+    # 与大模型单轮对话
     def chat(self, message: str, hist: list = None, tools: list = None) -> str:
         messages = self.base_messages.copy()
 
