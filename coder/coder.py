@@ -7,6 +7,7 @@ from pathlib import Path
 """
 class Coder(Role):
 	_name: str = "coder"
+	_max_iteration = Config.get("coder").get("max_iteration")
 
 # 初始化llm模型
 llm_model = Config.get("coder").get("llm_model")

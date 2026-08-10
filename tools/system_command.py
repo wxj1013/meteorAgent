@@ -5,6 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 from utils import parse_size
+import traceback
 
 @assign_to(Coder)
 def run_python(script_path: str, args: list = None) -> str:
@@ -53,12 +54,14 @@ def run_python(script_path: str, args: list = None) -> str:
             cmd,
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             timeout=timeout,
             cwd=str(target_path.parent)  # 在脚本所在目录执行
         )
 
         # 合并 stdout 和 stderr
-        output = result.stdout + result.stderr
+        output = (result.stdout or '') + (result.stderr or '')
 
         # 截断过长的输出
         if len(output.encode("utf-8")) > max_output:
@@ -81,4 +84,5 @@ def run_python(script_path: str, args: list = None) -> str:
     except FileNotFoundError:
         return f"错误：找不到 Python 解释器（{sys.executable}），请确认环境配置"
     except Exception as e:
-        return f"执行脚本失败：{str(e)}"
+        error_detail = traceback.format_exc()
+        return f"执行脚本失败：{str(error_detail)}"

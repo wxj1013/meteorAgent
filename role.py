@@ -2,6 +2,8 @@ from typing import List, Dict, Any, Optional, Callable
 import inspect
 from llm import BaseLLM, DeepSeekLLM
 import utils
+import json
+from log import Logger
 
 # 角色，定义每个角色的工具和skill
 class Role:
@@ -9,6 +11,8 @@ class Role:
     _tools = []
     # _skills: List[Skill] = []
     _llm_model: BaseLLM = None
+    _max_iteration: 10
+    _max_retry: 3
 
     # 打包工具给大模型api
     @classmethod
@@ -57,10 +61,50 @@ class Role:
         else:
             raise Exception(f"不支持当前模型:{model}")
 
-    # 调用模型。在这里替换tools和skills
+    # 解决单任务
     @classmethod
-    def chat(cls, message: str):
-        system_prompt = cls._llm_model.system_prompt.format(tools = cls.tools_to_prompt())
-        print(system_prompt)
+    def handle_task(cls, task: str) -> str:
+        tools = cls.pack_tools()
+        hist = [{
+            "role": "user", 
+            "content": task
+        }]
+        iteration = 0
 
-        # return cls._llm_model.chat(message, system_prompt)
+        Logger.info(cls._name + "-user:" + task)
+
+        while iteration < cls._max_iteration:
+            assistant_msg = cls._llm_model.chat(hist = hist, tools = tools)
+
+            assistant_msg_content = {
+                "role": "assistant", 
+                "content": assistant_msg.content
+            }
+
+            Logger.info(cls._name + "-assistant:" + assistant_msg.content)
+
+            if not assistant_msg.tool_calls:
+                return assistant_msg.content
+
+            assistant_msg_content["tool_calls"] = assistant_msg.tool_calls
+            hist.append(assistant_msg_content)
+
+            for tool_call in assistant_msg.tool_calls:
+                tool_name = tool_call.function.name
+                tool_args = json.loads(tool_call.function.arguments)
+
+                Logger.info(cls._name + "-tool-" + tool_name + ":" + tool_call.id)
+
+                tool_result = cls.call_tool(tool_name, **tool_args)
+                hist.append({
+                    "role": "tool", 
+                    "tool_call_id": tool_call.id,
+                    "content": tool_result
+                })
+
+                Logger.info(cls._name + "-tool-" + tool_name + ":" + tool_result)
+
+            iteration += 1
+
+        return f"超过最大步数：{cls._max_iteration}步，任务未完成。当前进度{assistant_msg.content}"
+

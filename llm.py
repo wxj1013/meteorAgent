@@ -22,11 +22,11 @@ class DeepSeekLLM(BaseLLM):
         self.base_messages = [{"role": "system", "content": system_prompt}]
 
     # 与大模型单轮对话
-    def chat(self, message: str, hist: list = None, tools: list = None) -> str:
+    def chat(self, hist: list, tools: list = None) -> str:
         messages = self.base_messages.copy()
 
         messages.extend(hist)
-
+        
         # 发送请求
         response = self.client.chat.completions.create(
             model=self.model,
@@ -38,4 +38,5 @@ class DeepSeekLLM(BaseLLM):
             extra_body={"thinking": {"type": "enabled"}}
         )
         return response.choices[0].message
+        
 
