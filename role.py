@@ -106,5 +106,5 @@ class Role:
 
             iteration += 1
 
-        return f"超过最大步数：{cls._max_iteration}步，任务未完成。当前进度{assistant_msg.content}"
+        return f"超过最大步数：{cls._max_iteration}步，任务未完成。具体操作请查阅日志明细。"
 
