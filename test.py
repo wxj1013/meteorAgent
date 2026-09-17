@@ -22,4 +22,19 @@ print(f"GPU Name: {gpu_name}")
 
 from utils import MessageCenter
 
-MC = messageCenter("localhost", 7777)
+MC = MessageCenter("localhost", 7777)
+
+id1 = MC.publish_task("coder", "这是一条任务")
+
+# print(id1)
+# 1dc601e1-c75c-4949-9ac4-3d8a8789d1ce
+
+t = MC.fetch_task("coder")
+print(t.task_id)
+print(t.content)
+
+MC.report_result(id1, "任务完成987")
+
+res = MC.fetch_result(id1)
+
+print(res)

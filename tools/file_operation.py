@@ -106,4 +106,4 @@ def list_all_files() -> str:
 
         return ",".join(files)
     except Exception as e:
-        return f"列举文件失败：{str(e)}"
+        return f"列举文件失败：{str(e)}，建议立即回报用户排查权限。"

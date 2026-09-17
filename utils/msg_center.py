@@ -2,14 +2,21 @@ import socket
 import pickle
 import uuid
 from typing import Optional
+import io
 
 # Task类
 class Task:
-    def __init__(self, task_id=None, content=None, result=None):
+    def __init__(self, task_id=None, content=None):
         self.task_id = task_id
         self.content = content
-        self.result = result
+        self.sub_tasks = []
 
+class MyUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        # 服务端序列化时类在 task.Task，这里映射到本模块的 Task
+        if module == "task" and name == "Task":
+            return Task
+        return super().find_class(module, name)
 
 class MessageCenter:
     def __init__(self, host="localhost", port=7777):
@@ -32,11 +39,13 @@ class MessageCenter:
     def fetch_task(self, queue: str) -> Optional[Task]:
         resp = self._send("fetch", queue)
         if resp.get("ok"):
-            return pickle.loads(resp["data"])
+            return MyUnpickler(io.BytesIO(resp["data"])).load()
         return None
 
     def report_result(self, task_id: str, result: str):
         self._send("report", (task_id, result))
 
-    def clear_queues(self):
-        self._send("clear")
+    def fetch_result(self, task_id: str):
+        resp = self._send("result", task_id)
+        return resp["data"]
+        

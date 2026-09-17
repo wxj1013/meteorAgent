@@ -14,6 +14,9 @@ class Role:
     _max_iteration: 10
     _max_retry: 3
 
+    # 未完成的任务列表
+    tasks = {}
+
     # 打包工具给大模型api
     @classmethod
     def pack_tools(cls) -> list:
@@ -105,6 +108,9 @@ class Role:
                 Logger.info(cls._name + "-tool-" + tool_name + ":" + tool_result)
 
             iteration += 1
+
+            # 如果有代办任务，先回报
+            pass
 
         return f"超过最大步数：{cls._max_iteration}步，任务未完成。具体操作请查阅日志明细。"
 
