@@ -42,3 +42,9 @@ def assign_to(*role_classes: type):
             role_cls._tools.append(tool)
         return func
     return decorator
+
+# 标记
+def suspend_after_call(func):
+    """标记此工具为“调用后挂起当前任务”的工具"""
+    func._suspend_after_call = True
+    return func
