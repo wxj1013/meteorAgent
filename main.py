@@ -1,13 +1,10 @@
 # E:/MeteorAgent/main.py
-import sys
-from pathlib import Path
-
-# 把项目根目录加入 sys.path
-ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT))
-
-from orchestrator import main as run_agent
+from planner import Planner
 
 if __name__ == "__main__":
-    import asyncio
-    asyncio.run(run_agent())
+    pass
+    # import asyncio
+    # asyncio.run(run_agent())
+
+# TODO
+# 有多少个工人正在alive，要在queue那边搞一个心跳检测机制开给planner

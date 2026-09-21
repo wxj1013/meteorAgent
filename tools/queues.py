@@ -1,14 +1,8 @@
-from config import Config
-from utils import MessageCenter
+from utils import mc
 import time
 from utils import Task
 from .tool import assign_to
 from coder import Coder
-
-host = Config.get("env").get("queues").get("host")
-port = Config.get("env").get("queues").get("port")
-
-mc = MessageCenter(host, port)
 
 @assign_to(Coder)
 def assign_task(target: str, content: str) -> str:
@@ -24,15 +18,12 @@ def assign_task(target: str, content: str) -> str:
         content (str): 发布的任务具体内容
 
     Returns:
-        str: 任务已发布（成功），或描述错误的字符串（失败）。
+        str: 任务编号。任务完成后会返回任务完成描述。如果发布失败，会返回失败信息
     """
-    try:
-        if target not in ["coder", "analyst", "engineer", "tester"]:
-            return "target参数错误，支持coder, analyst, engineer, tester。请确认任务的发布对象后重填"
-        task_id = mc.publish_task(target, content)
-        return f"任务已发布，任务编号:{task_id}。"
-    except Exception as e:
-        return f"任务发布失败：{str(e)}，建议立即回报用户，检查任务队列配置情况。"
+    if target not in ["coder", "analyst", "engineer", "tester"]:
+        return "target参数错误，支持coder, analyst, engineer, tester。请确认任务的发布对象后重填"
+    task_id = mc.publish_task(target, content)
+    return task_id
 
 @assign_to(Coder)
 def report_result(result: str, task_id: str = None) -> str:

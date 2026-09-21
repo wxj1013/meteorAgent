@@ -1,0 +1,6 @@
+# 负责人的配置，只配置一位负责人
+llm_model: "deepseek-v4-pro"
+api_key: ""
+reasoning_effort: "high"
+max_iteration: 50 # 同一个问题最大步数
+timeout: 600 # 工具执行的最长等待时间（秒） 

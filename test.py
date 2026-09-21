@@ -19,3 +19,5 @@ print(f"GPU Name: {gpu_name}")
 
 # print(Coder.handle_task("任务来自planner。\n完成如下代码：使用CNN完成对/data/cifar-10-batches-py中数据集的分类。"))
 
+
+

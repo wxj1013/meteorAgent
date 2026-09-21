@@ -3,5 +3,4 @@ llm_model: "deepseek-v4-pro" # 目前支持deepseek
 api_key: ""
 reasoning_effort: "high"
 max_iteration: 50 # 同一个问题最大步数
-max_retry: 3 # 同一个工具连续调用失败3次直接回报
 timeout: 630 # 工具执行的最长等待时间（秒） 

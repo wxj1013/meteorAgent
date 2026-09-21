@@ -3,12 +3,14 @@ import pickle
 import uuid
 from typing import Optional
 import io
+from config import Config
 
 # Task类
 class Task:
     def __init__(self, task_id=None, content=None):
         self.task_id = task_id
         self.content = content
+        self.historys = []
         self.sub_tasks = []
 
 class MyUnpickler(pickle.Unpickler):
@@ -38,7 +40,7 @@ class MessageCenter:
 
     def fetch_task(self, queue: str) -> Optional[Task]:
         resp = self._send("fetch", queue)
-        if resp.get("ok"):
+        if resp.get("ok") and resp.get("data") is not None:
             return MyUnpickler(io.BytesIO(resp["data"])).load()
         return None
 
@@ -47,5 +49,12 @@ class MessageCenter:
 
     def fetch_result(self, task_id: str):
         resp = self._send("result", task_id)
-        return resp["data"]
+        if resp.get("ok"):
+            return resp["data"]
+        return None
+
+host = Config.get("env").get("queues").get("host")
+port = Config.get("env").get("queues").get("port")
+
+mc = MessageCenter(host, port)
         

@@ -43,8 +43,7 @@ def assign_to(*role_classes: type):
         return func
     return decorator
 
-# 标记
-def suspend_after_call(func):
-    """标记此工具为“调用后挂起当前任务”的工具"""
-    func._suspend_after_call = True
+# 标记子任务，调用子任务后，将会重新进入任务队列，等待子任务完成后继续。
+def subtask(func):
+    func.subtask = True
     return func

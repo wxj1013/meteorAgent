@@ -4,7 +4,7 @@ import json
 from llm import DeepSeekLLM
 import utils
 from log import Logger
-from utils import Task
+from utils import Task, mc
 
 # 角色，定义每个角色的工具和skill
 class Role:
@@ -34,7 +34,6 @@ class Role:
             self._max_retry = max_retry
 
         # LLM 客户端
-        if "deepseek" in model:
         self._llm_model = self._create_llm(api_key, model, reasoning_effort, self.__class__._system_prompt)
 
         # 每个role自己的代办任务清单
@@ -43,7 +42,7 @@ class Role:
     # 每个实例持有独立的 LLM 客户端
     def _create_llm(self, api_key, model, reasoning_effort, system_prompt):
         if "deepseek" in model:
-            return DeepSeekLLM(api_key, model, reasoning_effort, system_prompt,)
+            return DeepSeekLLM(api_key, model, reasoning_effort, system_prompt)
         raise Exception(f"不支持当前模型:{model}")
 
 
@@ -77,36 +76,49 @@ class Role:
         ]
 
     # 调用一个工具
-    def _call_tool(self, tool_name: str, **kwargs) -> str:
+    def _call_tool(self, tool_name: str, task: Task, **kwargs) -> str:
         for tool in self.__class__._tools:
             if tool.name == tool_name:
                 try:
-                    return tool.func(**kwargs)
+                    ret = tool.func(**kwargs)
+                    # 子任务
+                    if getattr(tool.func, 'subtask', False):
+                        task.sub_tasks.append(ret)
+                    return ret
                 except Exception as e:
                     return f"调用工具错误：{e}"
         return f"角色「{self._name}」没有名为「{tool_name}」的工具"
 
     # 解决单任务
-    def handle_task(cls, task: str) -> str:
-        tools = cls.pack_tools()
-        hist = [{"role": "user", "content": task}]
-        iteration = 0
+    def handle_task(self, task: Task):
+        # 读取历史
+        if task.historys:
+            hist = task.historys
+        else:
+            hist = [{"role": "user", "content": task.content}]
+            task.historys = hist
 
-        Logger.info(f"{self._name}-user: {task}")
+        tools = self._pack_tools()
+        reported = False
 
-        while iteration < self._max_iteration:   # 实例属性或类属性均可安全读取
+        for iteration in range(self._max_iteration):
             assistant_msg = self._llm_model.chat(hist=hist, tools=tools)
-
-            assistant_msg_content = {
-                "role": "assistant",
-                "content": assistant_msg.content,
-            }
-
             Logger.info(f"{self._name}-assistant: {assistant_msg.content}")
 
+            # 没有工具调用时，视为任务完成，自动上报
             if not assistant_msg.tool_calls:
-                self._memory.append({"task": task, "result": assistant_msg.content})
-                return assistant_msg.content
+                if not reported:
+                    mc.report_result(task.task_id, assistant_msg.content)
+                    Logger.info(f"{self._name} 报告结果: {assistant_msg.content}")
+                task.historys = []
+                return
+
+            # 保存 assistant 消息
+            hist.append({
+                "role": "assistant",
+                "content": assistant_msg.content,
+                "tool_calls": assistant_msg.tool_calls,
+            })
 
             assistant_msg_content["tool_calls"] = assistant_msg.tool_calls
             hist.append(assistant_msg_content)
@@ -117,7 +129,7 @@ class Role:
 
                 Logger.info(f"{self._name}-tool-{tool_name}: {tool_call.id}")
 
-                tool_result = self._call_tool(tool_name, **tool_args)
+                tool_result = self._call_tool(tool_name, task.task_id, **tool_args)
                 hist.append({
                     "role": "tool",
                     "tool_call_id": tool_call.id,
@@ -126,8 +138,60 @@ class Role:
 
                 Logger.info(f"{self._name}-tool-{tool_name}: {tool_result}")
 
-            iteration += 1
+                # 回报则结束
+                if tool_name == "report_result":
+                    reported = True
+                    task.historys = []
+                    return
 
-            # 如果有代办任务，先把任务放到tasks
+            # 保存当前历史
+            task.historys = hist
 
-        return f"超过最大步数：{self._max_iteration}步，任务未完成。具体操作请查阅日志明细。"
+            # 如果有子任务，先把任务放到tasks
+            if len(task.sub_tasks) > 0:
+                self.tasks[task.task_id] = task
+                return 
+
+        mc.report_result(task.task_id, f"超过最大步数：{self._max_iteration}步，任务未完成。具体操作请查阅日志明细。")
+        task.historys = []
+        return
+
+    # 检查子任务状态，将已完成的结果写入 task.historys
+    def _update_subtasks(self, task: Task):
+        if not task.historys:
+            task.historys = [{"role": "user", "content": task.content}]
+
+        completed = []
+        for sub_id in task.sub_tasks:
+            result = mc.fetch_result(sub_id)
+            if result is not None:
+                task.historys.append({
+                    "role": "user",
+                    "content": f"子任务 {sub_id} 的结果如下：\n{result}"
+                })
+                completed.append(sub_id)
+
+        for sub_id in completed:
+            task.sub_tasks.remove(sub_id)
+
+    # 角色开始作业
+    def run(self, poll_interval: float = 1.0):
+        while True:
+            # 处理等待子任务的任务
+            for task_id, task in list(self.tasks.items()):
+                self._update_subtasks(task)
+
+                # 所有子任务已完成，继续原任务
+                if len(task.sub_tasks) == 0:
+                    self.tasks.pop(task_id, None)
+                    Logger.info(f"{self._name} 继续任务: {task_id}")
+                    self.handle_task(task)
+
+            # 获取新任务
+            new_task = mc.fetch_task(self.__class__._name)
+            if new_task:
+                Logger.info(f"{self._name} 收到新任务: {new_task.task_id}")
+                self.handle_task(new_task)
+
+            # 沉睡
+            time.sleep(poll_interval)
