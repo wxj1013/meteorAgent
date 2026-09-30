@@ -1,3 +1,4 @@
+# msg_center.py
 import socket
 import pickle
 import uuid
@@ -52,6 +53,37 @@ class MessageCenter:
         if resp.get("ok"):
             return resp["data"]
         return None
+
+    def peek_queue(self, queue_name: str):
+        """查看指定队列：返回前10个任务对象和当前队列总数"""
+        resp = self._send("peek", queue_name)
+        if resp.get("ok"):
+            count = resp.get("count")
+            data_bytes_list = resp.get("data", [])
+            tasks = []
+            for task_bytes in data_bytes_list:
+                try:
+                    task = MyUnpickler(io.BytesIO(task_bytes)).load()
+                    tasks.append(task)
+                except Exception as e:
+                    tasks.append({"error": f"deserialize failed: {e}"})
+            return {"count": count, "tasks": tasks}
+        else:
+            raise Exception(resp.get("error", "unknown error"))
+
+    def clear_queue(self, queue_name: str):
+        """清空指定队列"""
+        resp = self._send("clear_queue", queue_name)
+        if resp.get("ok"):
+            return True
+        raise Exception(resp.get("error", "unknown error"))
+
+    def clear_all_queues(self):
+        """清空全部队列"""
+        resp = self._send("clear_all", None)
+        if resp.get("ok"):
+            return True
+        raise Exception(resp.get("error", "unknown error"))
 
 host = Config.get("env").get("queues").get("host")
 port = Config.get("env").get("queues").get("port")

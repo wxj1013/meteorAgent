@@ -1,6 +1,17 @@
-# 编码者的配置
-llm_model: "deepseek-v4-pro" # 目前支持deepseek
-api_key: ""
-reasoning_effort: "high"
-max_iteration: 50 # 同一个问题最大步数
-timeout: 630 # 工具执行的最长等待时间（秒） 
+# 编码者的配置，希望配置几个就写几个
+
+coder1:
+  llm_model: "deepseek-v4-pro" # 目前支持deepseek
+  api_key: ${ds_key_coder}
+  reasoning_effort: "high"
+  max_iteration: 50 # 同一个问题最大步数
+  max_retry: 3
+  timeout: 630 # 工具执行的最长等待时间（秒） 
+
+coder2:
+  llm_model: "deepseek-v4-pro" # 目前支持deepseek
+  api_key: ${ds_key_coder}
+  reasoning_effort: "high"
+  max_iteration: 50 # 同一个问题最大步数
+  max_retry: 3
+  timeout: 630 # 工具执行的最长等待时间（秒） 

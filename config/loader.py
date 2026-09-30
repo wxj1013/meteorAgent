@@ -1,6 +1,7 @@
 import yaml
 from pathlib import Path
 from typing import Any, Dict
+import os
 
 class Config:
     """
@@ -17,7 +18,9 @@ class Config:
         base = Path(__file__).parent
         for yml in base.glob("*.yaml"):
             with open(yml, "r", encoding="utf-8") as f:
-                cls._data[yml.stem] = yaml.safe_load(f)
+                content = f.read()
+                content = os.path.expandvars(content)  
+                cls._data[yml.stem] = yaml.safe_load(content)
 
     @classmethod
     def get(cls, key: str):

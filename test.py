@@ -21,3 +21,4 @@ print(f"GPU Name: {gpu_name}")
 
 
 
+from coder import Coder

@@ -1,7 +1,8 @@
 from role import Role
 from pathlib import Path
 from config import Config
-import multiprocessing
+import threading
+from agents import register
 
 current_dir = Path(__file__).parent
 prompt_path = current_dir / 'prompt.md'
@@ -15,7 +16,6 @@ max_iteration = Config.get("planner").get("max_iteration")
 max_retry = Config.get("planner").get("max_retry")
 timeout = Config.get("planner").get("timeout") # TODO,暂未实现timeout
 
-
 """
     总负责人
 """
@@ -25,7 +25,13 @@ class Planner(Role):
 
 planner = Planner(api_key, llm_model, reasoning_effort, max_iteration, max_retry, "planner")
 
-def run_planner():
+def _run():
     planner.run(poll_interval=10)
 
-multiprocessing.Process(target=run_planner, daemon=True).start()
+t = threading.Thread(
+    target=_run,
+    name="planner",
+    daemon=True          
+)
+t.start()
+register("planner", t)

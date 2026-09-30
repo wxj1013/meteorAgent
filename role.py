@@ -16,6 +16,11 @@ class Role:
     _max_retry: int = 3
     _system_prompt: str = ""
 
+    # tool不是公用的
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._tools = []
+
     def __init__(
         self,
         api_key: str,
@@ -97,6 +102,7 @@ class Role:
             hist = task.historys
         else:
             hist = [{"role": "user", "content": task.content}]
+            Logger.info(f"user: {task.content}")
             task.historys = hist
 
         tools = self._pack_tools()
@@ -110,7 +116,7 @@ class Role:
             if not assistant_msg.tool_calls:
                 if not reported:
                     mc.report_result(task.task_id, assistant_msg.content)
-                    Logger.info(f"{self._name} 报告结果: {assistant_msg.content}")
+                    Logger.info(f"{self._name} 未调用任何工具，视为报告。")
                 task.historys = []
                 return
 
@@ -121,23 +127,20 @@ class Role:
                 "tool_calls": assistant_msg.tool_calls,
             })
 
-            assistant_msg_content["tool_calls"] = assistant_msg.tool_calls
-            hist.append(assistant_msg_content)
-
             for tool_call in assistant_msg.tool_calls:
                 tool_name = tool_call.function.name
                 tool_args = json.loads(tool_call.function.arguments)
 
-                Logger.info(f"{self._name}-tool-{tool_name}: {tool_call.id}")
+                Logger.info(f"{self._name}-tool_call-{tool_name}: {tool_call.id}")
 
-                tool_result = self._call_tool(tool_name, task.task_id, **tool_args)
+                tool_result = self._call_tool(tool_name, task, **tool_args)
                 hist.append({
                     "role": "tool",
                     "tool_call_id": tool_call.id,
                     "content": tool_result,
                 })
 
-                Logger.info(f"{self._name}-tool-{tool_name}: {tool_result}")
+                Logger.info(f"{self._name}-tool_result-{tool_name}: {tool_result}")
 
                 # 回报则结束
                 if tool_name == "report_result":
@@ -177,6 +180,7 @@ class Role:
 
     # 角色开始作业
     def run(self, poll_interval: float = 1.0):
+        Logger.info(f"{self._name} 已启用")
         while True:
             # 处理等待子任务的任务
             for task_id, task in list(self.tasks.items()):

@@ -1,10 +1,12 @@
 from utils import mc
 import time
 from utils import Task
-from .tool import assign_to
+from .tool import assign_to, subtask
 from coder import Coder
+from planner import Planner
 
-@assign_to(Coder)
+@subtask
+@assign_to(Planner, Coder)
 def assign_task(target: str, content: str) -> str:
     """
     通过消息队列，发布任务给planner以外的其他角色。
@@ -25,7 +27,7 @@ def assign_task(target: str, content: str) -> str:
     task_id = mc.publish_task(target, content)
     return task_id
 
-@assign_to(Coder)
+@assign_to(Planner, Coder)
 def report_result(result: str, task_id: str = None) -> str:
     """
     把任务完成的信息反馈给消息队列。调用此方法后，任务会结束。

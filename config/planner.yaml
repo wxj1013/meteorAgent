@@ -1,7 +1,7 @@
 # 负责人的配置
 llm_model: "deepseek-v4-pro"
-api_key: ""
+api_key: ${ds_key}
 reasoning_effort: "high"
 max_iteration: 50 # 同一个问题最大步数
-max_retry: 3 # 同一个工具错误时重试次数
+max_retry: 3
 timeout: 600 # 工具执行的最长等待时间（秒） 

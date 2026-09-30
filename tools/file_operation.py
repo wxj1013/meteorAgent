@@ -2,9 +2,10 @@ from pathlib import Path
 from config import Config
 from utils import parse_size
 from coder import Coder
+from planner import Planner
 from .tool import assign_to
 
-@assign_to(Coder)
+@assign_to(Planner, Coder)
 def read_file(file_path: str, encoding: str = "utf-8") -> str:
     """
     读取 workspace 下指定文本文件的全部内容（带大小限制）。
@@ -49,7 +50,7 @@ def read_file(file_path: str, encoding: str = "utf-8") -> str:
         return f"读取文件失败：{str(e)}"
 
 
-@assign_to(Coder)
+@assign_to(Planner, Coder)
 def write_file(file_path: str, content: str, encoding: str = "utf-8") -> str:
     """
     将文本内容覆盖写入 workspace 下的指定文件（自动创建父目录）。
@@ -80,7 +81,7 @@ def write_file(file_path: str, content: str, encoding: str = "utf-8") -> str:
         return f"写入文件失败：{str(e)}"
 
 
-@assign_to(Coder)
+@assign_to(Planner, Coder)
 def list_all_files() -> str:
     """
     列举 workspace 下指定目录内的所有文件（包括文件夹中的文件）。
